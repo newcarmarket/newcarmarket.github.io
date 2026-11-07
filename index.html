@@ -88,6 +88,19 @@ td.no{color:var(--sub)}
 .links a span{font-size:14px;color:var(--sub)}
 .links a svg{color:var(--sub);flex:none}
 .links a:hover b{color:var(--accent)}
+.vlatest{margin-top:24px}
+.vlatest[hidden]{display:none}
+.vlatest .vh{display:block;font-size:14px;font-weight:700;color:var(--sub);margin-bottom:10px}
+.vlist{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;max-width:560px}
+.vlist a{display:block;min-width:0}
+.vlist .vt{position:relative;display:block;aspect-ratio:9/16;border-radius:12px;overflow:hidden;background:#000}
+.vlist img{display:block;width:100%;height:100%;object-fit:cover;transition:transform .25s}
+.vlist .vt::after{content:"";position:absolute;left:50%;top:50%;width:34px;height:34px;margin:-17px 0 0 -17px;border-radius:50%;background:rgba(0,0,0,.55) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23fff'%3E%3Cpath d='M9 7v10l8-5z'/%3E%3C/svg%3E") center/18px no-repeat}
+.vlist a:hover img{transform:scale(1.04)}
+.vlist a.on .vt{box-shadow:0 0 0 3px var(--accent)}
+.vlist .vn{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-top:8px;font-size:13px;line-height:1.45}
+.vlist a:hover .vn{color:var(--accent)}
+@media (max-width:520px){.vlist{grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:40%;overflow-x:auto;scroll-snap-type:x mandatory;max-width:none;padding-bottom:6px}.vlist a{scroll-snap-align:start}}
 .contact .box{max-width:560px;margin:0 auto}
 form{margin-top:32px;display:grid;gap:16px}
 form label.l{display:block;font-size:14px;font-weight:700;margin-bottom:8px}
@@ -160,6 +173,7 @@ footer a{text-decoration:underline}
     <div class="txt">
       <h2>영상으로 먼저 만나보세요</h2>
       <p class="desc">신차 특가와 렌트·리스 정보를 영상과 글로 전해드려요.</p>
+      <div class="vlatest" id="vlatest" hidden><b class="vh">최신 영상</b><div class="vlist" id="vlist"></div></div>
       <div class="links">
         <a href="https://www.youtube.com/@%EC%8B%A0%EC%B0%A8%EB%A7%88%EC%BC%93" target="_blank" rel="noopener"><div><b>유튜브 채널</b><span>신차 특가 영상 모아보기</span></div><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a>
         <a href="https://blog.naver.com/newcarmarket" target="_blank" rel="noopener"><div><b>네이버 블로그</b><span>차종별 조건과 소식</span></div><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a>
@@ -242,6 +256,22 @@ document.getElementById('f').addEventListener('submit',function(e){
 (function(){var a=document.getElementById('short');if(!a||/claude/.test(location.hostname)||location.protocol==='file:')return;
 var f=document.createElement('iframe');f.className='short';f.src='https://www.youtube.com/embed/G9T6sxCXRi4';f.title='신차마켓 유튜브 쇼츠';
 f.allow='accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';f.allowFullscreen=true;a.replaceWith(f);})();
+(function(){var MAIN='G9T6sxCXRi4',wrap=document.getElementById('vlatest'),box=document.getElementById('vlist');if(!wrap||!box)return;
+function esc(s){return String(s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+function clean(s){var t=String(s||'').replace(/#[^\s#]+/g,'').replace(/\s+/g,' ').trim();return t||String(s||'')}
+fetch('videos.json',{cache:'no-cache'}).then(function(r){if(!r.ok)throw new Error(r.status);return r.json()}).then(function(d){
+  var list=(d.videos||[]).filter(function(v){return v&&v.id&&v.id!==MAIN&&v.short!==false}).slice(0,4);
+  if(!list.length)return;
+  box.innerHTML=list.map(function(v){var t=clean(v.title),id=esc(v.id);
+    return '<a href="https://www.youtube.com/shorts/'+id+'" target="_blank" rel="noopener" data-vid="'+id+'" title="'+esc(t)+'"><span class="vt"><img src="https://i.ytimg.com/vi/'+id+'/hqdefault.jpg" alt="" loading="lazy"></span><span class="vn">'+esc(t)+'</span></a>'}).join('');
+  wrap.hidden=false;
+}).catch(function(){});
+box.addEventListener('click',function(e){
+  var a=e.target.closest('a[data-vid]'),f=document.querySelector('iframe.short');if(!a||!f)return;
+  e.preventDefault();f.src='https://www.youtube.com/embed/'+a.getAttribute('data-vid')+'?autoplay=1';
+  [].forEach.call(box.children,function(x){x.classList.toggle('on',x===a)});
+  if(window.innerWidth<=820)f.scrollIntoView({behavior:'smooth',block:'center'});
+});})();
 </script>
 </body>
 </html>
