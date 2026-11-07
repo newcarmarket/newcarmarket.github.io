@@ -1,0 +1,65 @@
+name: 유튜브 최신 영상 갱신
+
+on:
+  schedule:
+    - cron: '7,37 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: youtube-videos
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 유튜브 RSS에서 최신 영상 가져오기
+        run: |
+          python3 - <<'PY'
+          import json, sys, urllib.request, xml.etree.ElementTree as ET
+          URL = 'https://www.youtube.com/feeds/videos.xml?channel_id=UClc5O2WE0EOxGIWgbrxCmXg'
+          NS = {'a': 'http://www.w3.org/2005/Atom', 'yt': 'http://www.youtube.com/xml/schemas/2015'}
+          try:
+              req = urllib.request.Request(URL, headers={'User-Agent': 'Mozilla/5.0'})
+              root = ET.fromstring(urllib.request.urlopen(req, timeout=30).read())
+          except Exception as e:
+              print('RSS를 못 가져와서 기존 videos.json을 유지합니다:', e)
+              sys.exit(0)
+          videos = []
+          for e in root.findall('a:entry', NS):
+              vid = e.findtext('yt:videoId', default='', namespaces=NS)
+              if not vid:
+                  continue
+              link = e.find('a:link', NS)
+              href = link.get('href', '') if link is not None else ''
+              videos.append({
+                  'id': vid,
+                  'title': e.findtext('a:title', default='', namespaces=NS),
+                  'published': e.findtext('a:published', default='', namespaces=NS),
+                  'short': '/shorts/' in href,
+              })
+          if not videos:
+              print('영상이 없어서 기존 videos.json을 유지합니다')
+              sys.exit(0)
+          with open('videos.json', 'w', encoding='utf-8') as f:
+              json.dump({'videos': videos[:10]}, f, ensure_ascii=False, indent=1)
+              f.write('\n')
+          print('영상', len(videos[:10]), '개 저장')
+          PY
+
+      - name: 바뀐 게 있으면 커밋
+        run: |
+          if [ -z "$(git status --porcelain -- videos.json)" ]; then
+            echo "변경 없음"
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add videos.json
+          git commit -m '유튜브 최신 영상 목록 갱신'
+          git push
