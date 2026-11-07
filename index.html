@@ -222,19 +222,22 @@ document.getElementById('f').addEventListener('submit',function(e){
   if(!n||!t){m.textContent='성함과 연락처를 입력해 주세요.';return}
   if(!document.getElementById('a').checked){m.textContent='개인정보 수집 및 이용에 동의해 주세요.';return}
   btn.disabled=true;btn.textContent='보내는 중...';m.textContent='';
-  fetch('https://formsubmit.co/ajax/newcarmarket24@gmail.com',{method:'POST',
+  var ctrl=window.AbortController?new AbortController():null,
+      tm=setTimeout(function(){if(ctrl)ctrl.abort()},12000);
+  fetch('https://api.web3forms.com/submit',{method:'POST',signal:ctrl?ctrl.signal:undefined,
     headers:{'Content-Type':'application/json','Accept':'application/json'},
-    body:JSON.stringify({_subject:'[신차마켓] 견적 문의 - '+n,_template:'table',_captcha:'false',
+    body:JSON.stringify({access_key:'c19e3b34-f010-4e98-ae3f-30f655983ccb',
+      subject:'[신차마켓] 견적 문의 - '+n,from_name:'신차마켓 홈페이지',
       '성함':n,'연락처':t,'관심차종':c||'미입력','문의내용':q||'-'})})
   .then(function(r){return r.json()})
   .then(function(d){
-    if(String(d.success)!=='true')throw new Error('fail');
+    if(d.success!==true)throw new Error(d.message||'fail');
     m.textContent='견적 문의가 접수됐어요. 확인 후 빠르게 연락드릴게요!';form.reset();
   })
   .catch(function(){
     m.innerHTML='전송에 실패했어요. <a href="http://pf.kakao.com/_zmmaX/chat" target="_blank" rel="noopener">카카오톡</a>이나 전화(010-8123-8792)로 문의해 주세요.';
   })
-  .finally(function(){btn.disabled=false;btn.textContent='견적 문의 보내기'});
+  .finally(function(){clearTimeout(tm);btn.disabled=false;btn.textContent='견적 문의 보내기'});
 });
 (function(){var a=document.getElementById('short');if(!a||/claude/.test(location.hostname)||location.protocol==='file:')return;
 var f=document.createElement('iframe');f.className='short';f.src='https://www.youtube.com/embed/G9T6sxCXRi4';f.title='신차마켓 유튜브 쇼츠';
